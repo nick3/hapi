@@ -35,13 +35,8 @@ coverage/
 **/*.swp
 **/*.swo
 
-# Documentation
-docs/
-website/
-README.md
-**/README.md
+# Documentation (keep package.json files for workspaces)
 LICENSE
-NOTICE
 AGENTS.md
 
 # Claude local settings
@@ -54,6 +49,3 @@ execplan/
 **/*.test.js
 **/test/
 vitest.config.ts
-
-# CI/CD
-.github/
