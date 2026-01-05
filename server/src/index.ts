@@ -15,10 +15,10 @@ import { NotificationHub } from './notifications/notificationHub'
 import type { NotificationChannel } from './notifications/notificationTypes'
 import { HappyBot } from './telegram/bot'
 import { startWebServer } from './web/server'
-import { getOrCreateJwtSecret } from './web/jwtSecret'
+import { getOrCreateJwtSecret } from './config/jwtSecret'
 import { createSocketServer } from './socket/server'
 import { SSEManager } from './sse/sseManager'
-import { getOrCreateVapidKeys } from './push/vapidKeys'
+import { getOrCreateVapidKeys } from './config/vapidKeys'
 import { PushService } from './push/pushService'
 import { PushNotificationChannel } from './push/pushNotificationChannel'
 import type { Server as BunServer } from 'bun'
@@ -89,7 +89,7 @@ async function main() {
     const socketServer = createSocketServer({
         store,
         jwtSecret,
-        getSession: (sessionId) => syncEngine?.getSession(sessionId) ?? store.getSession(sessionId),
+        getSession: (sessionId) => syncEngine?.getSession(sessionId) ?? store.sessions.getSession(sessionId),
         onWebappEvent: (event: SyncEvent) => syncEngine?.handleRealtimeEvent(event),
         onSessionAlive: (payload) => syncEngine?.handleSessionAlive(payload),
         onSessionEnd: (payload) => syncEngine?.handleSessionEnd(payload),

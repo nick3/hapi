@@ -5,7 +5,7 @@ import { configuration } from '../../configuration'
 import { constantTimeEquals } from '../../utils/crypto'
 import { parseAccessToken } from '../../utils/accessToken'
 import { validateTelegramInitData } from '../telegramInitData'
-import { getOrCreateOwnerId } from '../ownerId'
+import { getOrCreateOwnerId } from '../../config/ownerId'
 import type { WebAppEnv } from '../middleware/auth'
 import type { Store } from '../../store'
 
@@ -56,7 +56,7 @@ export function createAuthRoutes(jwtSecret: Uint8Array, store: Store): Hono<WebA
             }
 
             const telegramUserId = String(result.user.id)
-            const storedUser = store.getUser('telegram', telegramUserId)
+            const storedUser = store.users.getUser('telegram', telegramUserId)
             if (!storedUser) {
                 return c.json({ error: 'not_bound' }, 401)
             }
