@@ -19,7 +19,12 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build server + web (server serves web/dist)
-RUN bun run build:server && bun run build:web
+#
+# server/src/web/embeddedAssets.generated.ts is gitignored and may be missing in
+# clean checkouts (e.g. GitHub Actions). Generate it from web/dist for bundling.
+RUN bun run build:web \
+    && (cd server && bun run generate:embedded-web-assets) \
+    && bun run build:server
 
 
 # Runtime stage: ship only runtime + built artifacts
