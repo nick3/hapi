@@ -1,0 +1,21 @@
+# VCS
+.git
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (built inside Docker)
+dist
+**/dist
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.vscode
+.idea
+
+# Local tooling
+.claude
