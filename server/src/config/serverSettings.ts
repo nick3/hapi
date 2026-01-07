@@ -12,6 +12,8 @@ import { getSettingsFile, readSettings, writeSettings } from './settings'
 
 export interface ServerSettings {
     telegramBotToken: string | null
+    telegramNotification: boolean
+    webappHost: string
     webappPort: number
     webappUrl: string
     corsOrigins: string[]
@@ -21,6 +23,8 @@ export interface ServerSettingsResult {
     settings: ServerSettings
     sources: {
         telegramBotToken: 'env' | 'file' | 'default'
+        telegramNotification: 'env' | 'file' | 'default'
+        webappHost: 'env' | 'file' | 'default'
         webappPort: 'env' | 'file' | 'default'
         webappUrl: 'env' | 'file' | 'default'
         corsOrigins: 'env' | 'file' | 'default'
@@ -82,6 +86,8 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
     let needsSave = false
     const sources: ServerSettingsResult['sources'] = {
         telegramBotToken: 'default',
+        telegramNotification: 'default',
+        webappHost: 'default',
         webappPort: 'default',
         webappUrl: 'default',
         corsOrigins: 'default',
@@ -99,6 +105,34 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
     } else if (settings.telegramBotToken !== undefined) {
         telegramBotToken = settings.telegramBotToken
         sources.telegramBotToken = 'file'
+    }
+
+    // telegramNotification: env > file > true (default enabled for backward compatibility)
+    let telegramNotification = true
+    if (process.env.TELEGRAM_NOTIFICATION !== undefined) {
+        telegramNotification = process.env.TELEGRAM_NOTIFICATION === 'true'
+        sources.telegramNotification = 'env'
+        if (settings.telegramNotification === undefined) {
+            settings.telegramNotification = telegramNotification
+            needsSave = true
+        }
+    } else if (settings.telegramNotification !== undefined) {
+        telegramNotification = settings.telegramNotification
+        sources.telegramNotification = 'file'
+    }
+
+    // webappHost: env > file > 127.0.0.1
+    let webappHost = '127.0.0.1'
+    if (process.env.WEBAPP_HOST) {
+        webappHost = process.env.WEBAPP_HOST
+        sources.webappHost = 'env'
+        if (settings.webappHost === undefined) {
+            settings.webappHost = webappHost
+            needsSave = true
+        }
+    } else if (settings.webappHost !== undefined) {
+        webappHost = settings.webappHost
+        sources.webappHost = 'file'
     }
 
     // webappPort: env > file > 3006
@@ -157,6 +191,8 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
     return {
         settings: {
             telegramBotToken,
+            telegramNotification,
+            webappHost,
             webappPort,
             webappUrl,
             corsOrigins,
