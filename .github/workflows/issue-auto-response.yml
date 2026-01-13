@@ -2,10 +2,10 @@ name: Issue Auto Response
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 concurrency:
-  group: issue-auto-response
+  group: issue-auto-response-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
@@ -79,3 +79,4 @@ jobs:
           safety-strategy: drop-sudo
           prompt-file: .github/prompts/issue-auto-response.md
           allow-bots: true
+          allow-users: "*"
