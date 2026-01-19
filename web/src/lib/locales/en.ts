@@ -190,6 +190,24 @@ export default {
   'composer.switchRemote': 'Switch to remote mode',
   'composer.attach': 'Attach file',
   'composer.send': 'Send',
+  'composer.stop': 'Stop',
+  'composer.voice': 'Voice assistant',
+
+  // Voice assistant
+  'voice.connecting': 'Connecting...',
+  'voice.active': 'Active',
+  'voice.muted': 'Muted',
+  'voice.error': 'Error',
+  'voice.mute': 'Mute',
+  'voice.unmute': 'Unmute',
+  'voice.end': 'End',
+  'voice.error.micPermission': 'Microphone permission denied',
+  'voice.error.network': 'Network error',
+  'voice.error.notInitialized': 'Voice session not initialized',
+  'voice.error.startFailed': 'Failed to start voice session',
+  'voice.error.notAllowed': 'Voice not allowed',
+  'voice.error.connection': 'Connection error',
+  'voice.dismiss': 'Dismiss',
 
   // Banners
   'offline.title': 'Offline',

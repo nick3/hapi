@@ -72,9 +72,9 @@ HAPI supports two methods:
 
 ### Can I start sessions remotely?
 
-Yes, with daemon mode:
+Yes, with runner mode:
 
-1. Run `hapi daemon start` on your computer
+1. Run `hapi runner start` on your computer
 2. Your machine appears in the "Machines" list in the web app
 3. Tap to spawn new sessions from anywhere
 
@@ -88,6 +88,10 @@ In the session view, tap the "Files" tab to:
 ### Can I send messages to the AI from my phone?
 
 Yes. Open any session and use the chat interface to send messages directly to the AI agent.
+
+### How do I use voice control?
+
+Set `ELEVENLABS_API_KEY`, open a session in the web app, and click the microphone button. See [Voice Assistant](./voice-assistant.md).
 
 ## Security
 
@@ -115,7 +119,7 @@ Only if they have your access token. For additional security:
 
 - Ensure server is running: `hapi server`
 - Check firewall allows port 3006
-- Verify `HAPI_SERVER_URL` is correct
+- Verify `HAPI_API_URL` is correct
 
 ### "Invalid token" error
 
@@ -123,17 +127,17 @@ Only if they have your access token. For additional security:
 - Check token matches in CLI and server
 - Verify `~/.hapi/settings.json` has correct `cliApiToken`
 
-### Daemon won't start
+### Runner won't start
 
 ```bash
 # Check status
-hapi daemon status
+hapi runner status
 
 # Clear stale lock file
-rm ~/.hapi/daemon.state.json.lock
+rm ~/.hapi/runner.state.json.lock
 
 # Check logs
-hapi daemon logs
+hapi runner logs
 ```
 
 ### Claude Code not found

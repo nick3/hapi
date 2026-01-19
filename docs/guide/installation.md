@@ -95,7 +95,7 @@ On first run, HAPI:
 ~/.hapi/
 ├── settings.json      # Main configuration
 ├── hapi.db           # SQLite database (server)
-├── daemon.state.json  # Daemon process state
+├── runner.state.json  # Runner process state
 └── logs/             # Log files
 ```
 </details>
@@ -106,11 +106,15 @@ On first run, HAPI:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLI_API_TOKEN` | Auto-generated | Shared secret for authentication |
-| `HAPI_SERVER_URL` | `http://localhost:3006` | Server URL for CLI |
-| `WEBAPP_PORT` | `3006` | HTTP server port |
+| `HAPI_API_URL` | `http://localhost:3006` | Server URL for CLI |
+| `HAPI_LISTEN_HOST` | `127.0.0.1` | HTTP server bind address |
+| `HAPI_LISTEN_PORT` | `3006` | HTTP server port |
+| `HAPI_PUBLIC_URL` | - | Public URL for external access |
 | `HAPI_HOME` | `~/.hapi` | Config directory path |
 | `DB_PATH` | `~/.hapi/hapi.db` | Database file path |
 | `CORS_ORIGINS` | - | Allowed CORS origins |
+| `ELEVENLABS_API_KEY` | - | ElevenLabs API key for voice |
+| `ELEVENLABS_AGENT_ID` | Auto-created | Custom ElevenLabs agent ID |
 </details>
 
 ## CLI setup
@@ -118,7 +122,7 @@ On first run, HAPI:
 If the server is not on localhost, set these before running `hapi`:
 
 ```bash
-export HAPI_SERVER_URL="http://your-server:3006"
+export HAPI_API_URL="http://your-server:3006"
 export CLI_API_TOKEN="your-token-here"
 ```
 
@@ -154,7 +158,7 @@ If you prefer not to use the public relay (e.g., for lower latency or self-manag
 https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 
 ```bash
-export WEBAPP_URL="https://your-tunnel.trycloudflare.com"
+export HAPI_PUBLIC_URL="https://your-tunnel.trycloudflare.com"
 hapi server
 ```
 </details>
@@ -194,29 +198,43 @@ Enable Telegram notifications and Mini App access:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="your-bot-token"
-export WEBAPP_URL="https://your-public-url"
+export HAPI_PUBLIC_URL="https://your-public-url"
 
 hapi server
 ```
 
 Then message your bot with `/start`, open the app, and enter your `CLI_API_TOKEN`.
 
-### Daemon setup
+### Runner setup
 
 Run a background service for remote session spawning:
 
 ```bash
-hapi daemon start
-hapi daemon status
-hapi daemon logs
-hapi daemon stop
+hapi runner start
+hapi runner status
+hapi runner logs
+hapi runner stop
 ```
 
-With the daemon running:
+With the runner running:
 
 - Your machine appears in the "Machines" list
 - You can spawn sessions remotely from the web app
 - Sessions persist even when the terminal is closed
+
+### Voice assistant setup
+
+Enable voice control:
+
+1. Get an API key from [elevenlabs.io](https://elevenlabs.io/app/settings/api-keys)
+2. Set the environment variable:
+
+```bash
+export ELEVENLABS_API_KEY="your-api-key"
+hapi server --relay
+```
+
+See [Voice Assistant](./voice-assistant.md) for usage details.
 
 ### Security notes
 
