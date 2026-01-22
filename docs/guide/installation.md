@@ -6,6 +6,19 @@ Install the HAPI CLI and set up the server.
 
 - Claude Code, OpenAI Codex CLI, or Google Gemini CLI installed
 
+Verify your CLI is installed:
+
+```bash
+# For Claude Code
+claude --version
+
+# For OpenAI Codex CLI
+codex --version
+
+# For Google Gemini CLI
+gemini --version
+```
+
 ## Install the CLI
 
 ```bash
@@ -157,10 +170,33 @@ If you prefer not to use the public relay (e.g., for lower latency or self-manag
 
 https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 
+**Quick tunnel** (temporary URL, changes on restart):
+
+```bash
+# Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+cloudflared tunnel --protocol http2 --url http://localhost:3006
+```
+
+Copy the generated URL and set it:
+
 ```bash
 export HAPI_PUBLIC_URL="https://your-tunnel.trycloudflare.com"
 hapi server
 ```
+
+**Named tunnel** (persistent URL):
+
+```bash
+# Create and configure a named tunnel
+cloudflared tunnel create hapi
+cloudflared tunnel route dns hapi hapi.yourdomain.com
+
+# Run the tunnel
+cloudflared tunnel --protocol http2 run hapi
+```
+
+> **Note:** Use `--protocol http2` instead of QUIC (the default) to avoid potential timeout issues with long-lived connections.
+
 </details>
 
 <details>
@@ -205,6 +241,11 @@ hapi server
 
 Then message your bot with `/start`, open the app, and enter your `CLI_API_TOKEN`.
 
+**Troubleshooting:**
+
+- If binding fails, verify `HAPI_PUBLIC_URL` is accessible from the internet
+- Telegram Mini App requires HTTPS (not HTTP)
+
 ### Runner setup
 
 Run a background service for remote session spawning:
@@ -221,6 +262,17 @@ With the runner running:
 - Your machine appears in the "Machines" list
 - You can spawn sessions remotely from the web app
 - Sessions persist even when the terminal is closed
+
+<details>
+<summary>Alternative: pm2</summary>
+
+If you prefer pm2 for process management:
+
+```bash
+pm2 start "hapi runner start --foreground" --name hapi-runner
+pm2 save
+```
+</details>
 
 ### Voice assistant setup
 

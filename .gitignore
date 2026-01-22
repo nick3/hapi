@@ -38,3 +38,6 @@ coverage/
 localdocs/
 execplan/
 /.claude
+
+# Generated npm bundle output (local)
+cli/npm/main/
