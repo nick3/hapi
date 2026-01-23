@@ -6,7 +6,8 @@ import { io, type Socket } from 'socket.io-client'
 import { stat } from 'node:fs/promises'
 import { logger } from '@/ui/logger'
 import { configuration } from '@/configuration'
-import type { RunnerState, Machine, MachineMetadata, Update, UpdateMachineBody } from './types'
+import type { Update, UpdateMachineBody } from '@hapi/protocol'
+import type { RunnerState, Machine, MachineMetadata } from './types'
 import { RunnerStateSchema, MachineMetadataSchema } from './types'
 import { backoff } from '@/utils/time'
 import { RpcHandlerManager } from './rpc/RpcHandlerManager'
@@ -100,7 +101,7 @@ export class ApiMachineClient {
 
     setRPCHandlers({ spawnSession, stopSession, requestShutdown }: MachineRpcHandlers): void {
         this.rpcHandlerManager.registerHandler('spawn-happy-session', async (params: any) => {
-            const { directory, sessionId, machineId, approvedNewDirectoryCreation, agent, yolo, token, sessionType, worktreeName } = params || {}
+            const { directory, sessionId, machineId, approvedNewDirectoryCreation, agent, model, yolo, token, sessionType, worktreeName } = params || {}
 
             if (!directory) {
                 throw new Error('Directory is required')
@@ -112,6 +113,7 @@ export class ApiMachineClient {
                 machineId,
                 approvedNewDirectoryCreation,
                 agent,
+                model,
                 yolo,
                 token,
                 sessionType,
