@@ -16,6 +16,7 @@ export type AgentEvent =
     | { type: 'ready' }
     | { type: 'api-error'; retryAttempt: number; maxRetries: number; error: unknown }
     | { type: 'turn-duration'; durationMs: number }
+    | { type: 'microcompact'; trigger: string; preTokens: number; tokensSaved: number }
     | ({ type: string } & Record<string, unknown>)
 
 export type ToolResultPermission = {
@@ -91,7 +92,7 @@ export type ToolPermission = {
     mode?: string
     allowedTools?: string[]
     decision?: 'approved' | 'approved_for_session' | 'denied' | 'abort'
-    answers?: Record<string, string[]>
+    answers?: Record<string, string[]> | Record<string, { answers: string[] }>
     date?: number
     createdAt?: number | null
     completedAt?: number | null
