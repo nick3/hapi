@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import { execFileSync } from 'node:child_process'
 import { z } from 'zod'
+import { PROTOCOL_VERSION } from '@hapi/protocol'
 import type { StartOptions } from '@/claude/runClaude'
 import { configuration } from '@/configuration'
 import { isRunnerRunningCurrentlyInstalledHappyVersion } from '@/runner/controlClient'
@@ -74,8 +75,9 @@ ${chalk.bold('Usage:')}
   hapi mcp               Start MCP stdio bridge
   hapi connect           (not available in direct-connect mode)
   hapi notify            (not available in direct-connect mode)
-  hapi server            Start the API + web server
-  hapi server --relay    Start with public relay
+  hapi hub               Start the API + web hub
+  hapi hub --relay       Start with public relay
+  hapi server            Alias for hapi hub
   hapi runner            Manage background service that allows
                             to spawn new sessions away from your computer
   hapi doctor            System diagnostics & troubleshooting
@@ -134,7 +136,7 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
             const { runClaude } = await import('@/claude/runClaude')
             await runClaude(options)
         } catch (error) {
-            const { message, messageLower, axiosCode, httpStatus, responseErrorText } = extractErrorInfo(error)
+            const { message, messageLower, axiosCode, httpStatus, responseErrorText, serverProtocolVersion } = extractErrorInfo(error)
 
             if (
                 axiosCode === 'ECONNREFUSED' ||
@@ -145,9 +147,9 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
                 messageLower.includes('enotfound') ||
                 messageLower.includes('network error')
             ) {
-                console.error(chalk.yellow('Unable to connect to HAPI server'))
-                console.error(chalk.gray(`  Server URL: ${configuration.apiUrl}`))
-                console.error(chalk.gray('  Please check your network connection or server status'))
+                console.error(chalk.yellow('Unable to connect to HAPI hub'))
+                console.error(chalk.gray(`  Hub URL: ${configuration.apiUrl}`))
+                console.error(chalk.gray('  Please check your network connection or hub status'))
             } else if (httpStatus === 403 && responseErrorText === 'Machine access denied') {
                 console.error(chalk.red('Machine access denied.'))
                 console.error(chalk.gray('  This machineId is already registered under a different namespace.'))
@@ -166,6 +168,14 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
                 console.error(chalk.gray('  Run: hapi auth login'))
             } else {
                 console.error(chalk.red('Error:'), message)
+            }
+
+            if (serverProtocolVersion !== undefined && serverProtocolVersion !== PROTOCOL_VERSION) {
+                if (serverProtocolVersion < PROTOCOL_VERSION) {
+                    console.error(chalk.yellow(`  Hint: hub protocol version (${serverProtocolVersion}) is behind CLI (${PROTOCOL_VERSION}). Please update the hub.`))
+                } else {
+                    console.error(chalk.yellow(`  Hint: CLI protocol version (${PROTOCOL_VERSION}) is behind hub (${serverProtocolVersion}). Please update the CLI.`))
+                }
             }
 
             if (process.env.DEBUG) {

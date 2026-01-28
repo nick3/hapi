@@ -12,7 +12,7 @@
     },
     "cli": {
       "name": "@twsxtd/hapi",
-      "version": "0.12.1",
+      "version": "0.14.0",
       "bin": {
         "hapi": "bin/hapi.cjs",
       },
@@ -43,11 +43,11 @@
         "vitest": "^4.0.16",
       },
       "optionalDependencies": {
-        "@twsxtd/hapi-darwin-arm64": "0.12.1",
-        "@twsxtd/hapi-darwin-x64": "0.12.1",
-        "@twsxtd/hapi-linux-arm64": "0.12.1",
-        "@twsxtd/hapi-linux-x64": "0.12.1",
-        "@twsxtd/hapi-win32-x64": "0.12.1",
+        "@twsxtd/hapi-darwin-arm64": "0.14.0",
+        "@twsxtd/hapi-darwin-x64": "0.14.0",
+        "@twsxtd/hapi-linux-arm64": "0.14.0",
+        "@twsxtd/hapi-linux-x64": "0.14.0",
+        "@twsxtd/hapi-win32-x64": "0.14.0",
       },
     },
     "docs": {
@@ -57,8 +57,8 @@
         "vitepress": "^1.6.4",
       },
     },
-    "server": {
-      "name": "hapi-server",
+    "hub": {
+      "name": "hapi-hub",
       "version": "0.1.0",
       "dependencies": {
         "@hapi/protocol": "workspace:*",
@@ -850,13 +850,15 @@
 
     "@twsxtd/hapi": ["@twsxtd/hapi@workspace:cli"],
 
-    "@twsxtd/hapi-darwin-arm64": ["@twsxtd/hapi-darwin-arm64@0.12.1", "", { "os": "darwin", "cpu": "arm64", "bin": { "hapi": "bin/hapi" } }, "sha512-AUtH+PCOLZyscD7WBCxLM1XGaHSlSXAWZgRYcDa16ZhrFxTFbJ6Lw/E9LO9uzIdXQd55c8aB4QyccZVH2KB4rw=="],
+    "@twsxtd/hapi-darwin-arm64": ["@twsxtd/hapi-darwin-arm64@0.14.0", "", { "os": "darwin", "cpu": "arm64", "bin": { "hapi": "bin/hapi" } }, "sha512-qBL0rqwdRZCU9X8HtV05bh8vn5V6tcrqEuIEGa6faz7/D0XE8yRArNw2YNUMtqPTu+X6FDHYa/b6tkHBueAsog=="],
 
-    "@twsxtd/hapi-darwin-x64": ["@twsxtd/hapi-darwin-x64@0.12.1", "", { "os": "darwin", "cpu": "x64", "bin": { "hapi": "bin/hapi" } }, "sha512-x7+b1pRcXcx9wIbr/fIwuWgCGp5PF6oMBHuTeVvYOPPOxNp3vShVuMsqvQSjBTUPXrYltPhxEO+V73MBAtps1g=="],
+    "@twsxtd/hapi-darwin-x64": ["@twsxtd/hapi-darwin-x64@0.14.0", "", { "os": "darwin", "cpu": "x64", "bin": { "hapi": "bin/hapi" } }, "sha512-vzv/z35OcT+VmLsd1vCl9ZjmwkbOSkGRyYEmYTNaJb6VPioZ0b3gfG0N197ooyoVswxxd6n8UPw3TiNLjSQ19Q=="],
 
-    "@twsxtd/hapi-linux-arm64": ["@twsxtd/hapi-linux-arm64@0.12.1", "", { "os": "linux", "cpu": "arm64", "bin": { "hapi": "bin/hapi" } }, "sha512-GkK1vi3vRGzmnSKA8ODb5mgCCDkvrJ5Z/p30qsEydJ/+uV3CIKMBbDvkvvBkfKjVknv/p9MPUxjalPyet2XcUA=="],
+    "@twsxtd/hapi-linux-arm64": ["@twsxtd/hapi-linux-arm64@0.14.0", "", { "os": "linux", "cpu": "arm64", "bin": { "hapi": "bin/hapi" } }, "sha512-Y29dXQkTbeo8623TWk0pGkJYbJXjm4kZjiSwg7auhpuA/Lnr5rzvtIGyDb2UTZ0CoveYXE2mckmjn8Ku+G7G2w=="],
 
-    "@twsxtd/hapi-linux-x64": ["@twsxtd/hapi-linux-x64@0.12.1", "", { "os": "linux", "cpu": "x64", "bin": { "hapi": "bin/hapi" } }, "sha512-hh8N2BgIhBgXiWjgK8yyeGrHgpVYAoZXvtffp4ooLXHL2rzKrQNMoj5ly/NH5SAtnwPbkbD4pxP1fcQv9BpTUw=="],
+    "@twsxtd/hapi-linux-x64": ["@twsxtd/hapi-linux-x64@0.14.0", "", { "os": "linux", "cpu": "x64", "bin": { "hapi": "bin/hapi" } }, "sha512-SUpmcdA8fzS+hP0yAf2X2OJkxZ3DsBsRcg6tj8lWF1g8+tlSuupIGmponGlX4tioilpEEYluW/+v+pOftEaVXA=="],
+
+    "@twsxtd/hapi-win32-x64": ["@twsxtd/hapi-win32-x64@0.14.0", "", { "os": "win32", "cpu": "x64", "bin": { "hapi": "bin/hapi.exe" } }, "sha512-K2IzWRPTRyZLO0490vBv2Xgh1S0FuQqhhqsNgSjSnh5Wc2mrkZLRyyDF+1d8P7I60oHyUWMg1gmLTvi9fTiRZg=="],
 
     "@twsxtd/hapi-win32-x64": ["@twsxtd/hapi-win32-x64@0.12.1", "", { "os": "win32", "cpu": "x64", "bin": { "hapi": "bin/hapi.exe" } }, "sha512-VvUatIsqsaF/QU7iva97YxdrlLGxV70QiWtVHkLpucLu+65mu+TmfKhHoZO4zN8mkzcRdKfVkwy9IIRysVH5Bg=="],
 
@@ -1558,7 +1560,7 @@
 
     "hapi-docs": ["hapi-docs@workspace:docs"],
 
-    "hapi-server": ["hapi-server@workspace:server"],
+    "hapi-hub": ["hapi-hub@workspace:hub"],
 
     "hapi-web": ["hapi-web@workspace:web"],
 

@@ -1,10 +1,10 @@
 # hapi CLI
 
-Run Claude Code, Codex, or Gemini sessions from your terminal and control them remotely through the hapi server.
+Run Claude Code, Codex, or Gemini sessions from your terminal and control them remotely through the hapi hub.
 
 ## What it does
 
-- Starts Claude Code sessions and registers them with hapi-server.
+- Starts Claude Code sessions and registers them with hapi-hub.
 - Starts Codex mode for OpenAI-based sessions.
 - Starts Gemini mode via ACP (Anthropic Code Plugins).
 - Provides an MCP stdio bridge for external tools.
@@ -13,7 +13,7 @@ Run Claude Code, Codex, or Gemini sessions from your terminal and control them r
 
 ## Typical flow
 
-1. Start the server and set env vars (see ../server/README.md).
+1. Start the hub and set env vars (see ../hub/README.md).
 2. Set the same CLI_API_TOKEN on this machine or run `hapi auth login`.
 3. Run `hapi` to start a session.
 4. Use the web app or Telegram Mini App to monitor and control.
@@ -24,8 +24,9 @@ Run Claude Code, Codex, or Gemini sessions from your terminal and control them r
 
 - `hapi` - Start a Claude Code session (passes through Claude CLI flags). See `src/index.ts`.
 - `hapi codex` - Start Codex mode. See `src/codex/runCodex.ts`.
+- `hapi codex resume <sessionId>` - Resume existing Codex session.
 - `hapi gemini` - Start Gemini mode via ACP. See `src/agent/runners/runAgentSession.ts`.
-  Note: Gemini runs in remote mode only; it waits for messages from the server UI/Telegram.
+  Note: Gemini runs in remote mode only; it waits for messages from the hub UI/Telegram.
 
 ### Authentication
 
@@ -43,8 +44,6 @@ See `src/commands/auth.ts`.
 - `hapi runner list` - List active sessions managed by runner.
 - `hapi runner stop-session <sessionId>` - Terminate specific session.
 - `hapi runner logs` - Print path to latest runner log file.
-- `hapi runner install` - Install runner as system service.
-- `hapi runner uninstall` - Remove runner system service.
 
 See `src/runner/run.ts`.
 
@@ -58,7 +57,8 @@ See `src/ui/doctor.ts`.
 ### Other
 
 - `hapi mcp` - Start MCP stdio bridge. See `src/codex/happyMcpStdioBridge.ts`.
-- `hapi server` - Start the bundled server (single binary workflow).
+- `hapi hub` - Start the bundled hub (single binary workflow).
+- `hapi server` - Alias for `hapi hub`.
 
 ## Configuration
 
@@ -66,8 +66,8 @@ See `src/configuration.ts` for all options.
 
 ### Required
 
-- `CLI_API_TOKEN` - Shared secret; must match the server. Can be set via env or `~/.hapi/settings.json` (env wins).
-- `HAPI_API_URL` - Server base URL (default: http://localhost:3006).
+- `CLI_API_TOKEN` - Shared secret; must match the hub. Can be set via env or `~/.hapi/settings.json` (env wins).
+- `HAPI_API_URL` - Hub base URL (default: http://localhost:3006).
 
 ### Optional
 
@@ -80,6 +80,14 @@ See `src/configuration.ts` for all options.
 
 - `HAPI_RUNNER_HEARTBEAT_INTERVAL` - Heartbeat interval in ms (default: 60000).
 - `HAPI_RUNNER_HTTP_TIMEOUT` - HTTP timeout for runner control in ms (default: 10000).
+
+### Worktree (set by runner)
+
+- `HAPI_WORKTREE_BASE_PATH` - Base repository path.
+- `HAPI_WORKTREE_BRANCH` - Current branch name.
+- `HAPI_WORKTREE_NAME` - Worktree name.
+- `HAPI_WORKTREE_PATH` - Full worktree path.
+- `HAPI_WORKTREE_CREATED_AT` - Creation timestamp (ms).
 
 ## Storage
 
@@ -123,5 +131,5 @@ bun run build:single-exe
 
 ## Related docs
 
-- `../server/README.md`
+- `../hub/README.md`
 - `../web/README.md`
