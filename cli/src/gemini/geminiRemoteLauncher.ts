@@ -153,7 +153,7 @@ class GeminiRemoteLauncher extends RemoteLauncherBase {
     private handleAgentMessage(message: AgentMessage): void {
         const converted = convertAgentMessage(message);
         if (converted) {
-            this.session.sendCodexMessage(converted);
+            this.session.sendAgentMessage(converted);
         }
 
         switch (message.type) {
@@ -199,6 +199,7 @@ class GeminiRemoteLauncher extends RemoteLauncherBase {
             await backend.cancelPrompt(this.session.sessionId);
         }
         await this.permissionHandler?.cancelAll('User aborted');
+        this.session.sendSessionEvent({ type: 'message', message: 'Session aborted' });
         this.session.queue.reset();
         this.session.onThinkingChange(false);
         this.abortController.abort();

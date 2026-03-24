@@ -64,6 +64,7 @@ function resolveInstructions(args: {
 }
 
 export function buildThreadStartParams(args: {
+    cwd: string;
     mode: EnhancedMode;
     mcpServers: McpServersConfig;
     cliOverrides?: CodexCliOverrides;
@@ -84,10 +85,12 @@ export function buildThreadStartParams(args: {
     } = resolveInstructions(args);
     const configWithInstructions = {
         ...config,
-        developer_instructions: resolvedDeveloperInstructions
+        developer_instructions: resolvedDeveloperInstructions,
+        ...(args.mode.modelReasoningEffort ? { model_reasoning_effort: args.mode.modelReasoningEffort } : {})
     };
 
     const params: ThreadStartParams = {
+        cwd: args.cwd,
         approvalPolicy: resolvedApprovalPolicy,
         sandbox: resolvedSandbox,
         baseInstructions,
@@ -105,6 +108,7 @@ export function buildThreadStartParams(args: {
 export function buildTurnStartParams(args: {
     threadId: string;
     message: string;
+    cwd: string;
     mode?: EnhancedMode;
     cliOverrides?: CodexCliOverrides;
     baseInstructions?: string;
@@ -117,6 +121,7 @@ export function buildTurnStartParams(args: {
 }): TurnStartParams {
     const params: TurnStartParams = {
         threadId: args.threadId,
+        cwd: args.cwd,
         input: [{ type: 'text', text: args.message }]
     };
 
@@ -147,6 +152,7 @@ export function buildTurnStartParams(args: {
             mode: collaborationMode,
             settings: {
                 model,
+                ...(args.mode?.modelReasoningEffort ? { reasoning_effort: args.mode.modelReasoningEffort } : {}),
                 developer_instructions: developerInstructions
             }
         };
