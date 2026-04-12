@@ -22,6 +22,7 @@ import { usePlatform } from '@/hooks/usePlatform'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { supportsEffort, supportsModelChange } from '@hapi/protocol'
 import { markSkillUsed } from '@/lib/recent-skills'
+import { useComposerDraft } from '@/hooks/useComposerDraft'
 import { FloatingOverlay } from '@/components/ChatInput/FloatingOverlay'
 import { Autocomplete } from '@/components/ChatInput/Autocomplete'
 import { StatusBar } from '@/components/AssistantChat/StatusBar'
@@ -40,6 +41,7 @@ export interface TextInputState {
 const defaultSuggestionHandler = async (): Promise<Suggestion[]> => []
 
 export function HappyComposer(props: {
+    sessionId?: string
     disabled?: boolean
     permissionMode?: PermissionMode
     collaborationMode?: CodexCollaborationMode
@@ -72,6 +74,7 @@ export function HappyComposer(props: {
 }) {
     const { t } = useTranslation()
     const {
+        sessionId,
         disabled = false,
         permissionMode: rawPermissionMode,
         collaborationMode: rawCollaborationMode,
@@ -142,6 +145,8 @@ export function HappyComposer(props: {
 
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const prevControlledByUser = useRef(controlledByUser)
+
+    useComposerDraft(sessionId, composerText, (text) => api.composer().setText(text))
 
     useEffect(() => {
         setInputState((prev) => {
@@ -303,10 +308,18 @@ export function HappyComposer(props: {
             return // let default textarea behavior handle newline
         }
 
-        // Enter without shift: send or no-op (never insert newline)
-        if (key === 'Enter' && !e.shiftKey && suggestions.length === 0) {
+        // Enter with suggestions visible: select the suggestion
+        if (key === 'Enter' && suggestions.length > 0) {
             e.preventDefault()
-            if (canSend) {
+            const indexToSelect = selectedIndex >= 0 ? selectedIndex : 0
+            handleSuggestionSelect(indexToSelect)
+            return
+        }
+
+        // Only plain Enter (no modifiers) sends; other modifier combos are ignored
+        if (key === 'Enter') {
+            e.preventDefault()
+            if (!e.ctrlKey && !e.altKey && !e.metaKey && canSend) {
                 api.composer().send()
                 setShowContinueHint(false)
             }
@@ -324,7 +337,7 @@ export function HappyComposer(props: {
                 moveDown()
                 return
             }
-            if ((key === 'Enter' || key === 'Tab') && !e.shiftKey) {
+            if ((key === 'Tab') && !e.shiftKey) {
                 e.preventDefault()
                 const indexToSelect = selectedIndex >= 0 ? selectedIndex : 0
                 handleSuggestionSelect(indexToSelect)
@@ -768,7 +781,7 @@ export function HappyComposer(props: {
                                 placeholder={showContinueHint ? t('misc.typeMessage') : t('misc.typeAMessage')}
                                 disabled={controlsDisabled}
                                 maxRows={5}
-                                submitOnEnter={!isTouch}
+                                submitOnEnter={false}
                                 cancelOnEscape={false}
                                 onChange={handleChange}
                                 onSelect={handleSelect}
