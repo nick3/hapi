@@ -13,7 +13,7 @@ COPY web/package.json web/package.json
 COPY website/package.json website/package.json
 COPY docs/package.json docs/package.json
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # Now copy the rest of the repo
 COPY . .
