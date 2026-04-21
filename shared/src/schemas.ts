@@ -90,8 +90,9 @@ export type AgentState = z.infer<typeof AgentStateSchema>
 export const TodoItemSchema = z.object({
     content: z.string(),
     status: z.enum(['pending', 'in_progress', 'completed']),
-    priority: z.enum(['high', 'medium', 'low']),
-    id: z.string()
+    priority: z.enum(['high', 'medium', 'low']).optional().default('medium'),
+    id: z.string().optional().default(''),
+    activeForm: z.string().optional()
 })
 
 export type TodoItem = z.infer<typeof TodoItemSchema>
@@ -225,6 +226,10 @@ export const SyncEventSchema = z.discriminatedUnion('type', [
             sessionId: z.string(),
             url: z.string()
         })
+    }),
+    SessionChangedSchema.extend({
+        type: z.literal('messages-consumed'),
+        localIds: z.array(z.string())
     }),
     SessionEventBaseSchema.extend({
         type: z.literal('heartbeat'),
