@@ -657,4 +657,369 @@ describe('AcpMessageHandler', () => {
         expect(messages).toHaveLength(1);
         expect((messages[0] as { text: string }).text).toMatch(/^Claude AI usage limit warning\|/);
     });
+
+    it('forwards agent_thought_chunk as a reasoning message', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: 'thinking about the problem' }
+        });
+
+        expect(messages).toHaveLength(1);
+        expect(messages[0]).toEqual({ type: 'reasoning', text: 'thinking about the problem' });
+    });
+
+    it('silently drops agent_thought_chunk when content is not a text block', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'image', url: 'https://example.com/img.png' }
+        });
+
+        expect(messages).toHaveLength(0);
+    });
+
+    it('does not flush the text buffer when a thought chunk arrives mid-stream', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentMessageChunk,
+            content: { type: 'text', text: 'partial answer' }
+        });
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: 'mid-stream thought' }
+        });
+
+        handler.flushText();
+
+        // Both messages are delivered intact with no loss. Reasoning is
+        // emitted inline (see AcpMessageHandler) so it precedes the
+        // flushed text segment — this is an intentional contract to let
+        // thoughts and text interleave without splitting a live segment.
+        expect(messages).toHaveLength(2);
+        expect(messages).toContainEqual({ type: 'reasoning', text: 'mid-stream thought' });
+        expect(messages).toContainEqual({ type: 'text', text: 'partial answer' });
+        expect(messages[0]).toEqual({ type: 'reasoning', text: 'mid-stream thought' });
+    });
+
+    it('does not drop thought chunks annotated with a non-assistant audience', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: {
+                type: 'text',
+                text: 'private reasoning',
+                annotations: { audience: ['user'] }
+            }
+        });
+
+        expect(messages).toHaveLength(1);
+        expect(messages[0]).toEqual({ type: 'reasoning', text: 'private reasoning' });
+    });
+
+    it('forwards sequential thought chunks in arrival order as separate reasoning messages', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: 'first thought' }
+        });
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: 'second thought' }
+        });
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: 'third thought' }
+        });
+
+        expect(messages).toEqual([
+            { type: 'reasoning', text: 'first thought' },
+            { type: 'reasoning', text: 'second thought' },
+            { type: 'reasoning', text: 'third thought' }
+        ]);
+    });
+
+    it('silently drops agent_thought_chunk with empty text', () => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content: { type: 'text', text: '' }
+        });
+
+        expect(messages).toHaveLength(0);
+    });
+
+    it.each([
+        ['null', null],
+        ['undefined', undefined],
+        ['number', 42],
+        ['string', 'not a block'],
+        ['array', ['text']]
+    ])('silently drops agent_thought_chunk when content is %s', (_label, content) => {
+        const messages: AgentMessage[] = [];
+        const handler = new AcpMessageHandler((message) => messages.push(message));
+
+        handler.handleUpdate({
+            sessionUpdate: ACP_SESSION_UPDATE_TYPES.agentThoughtChunk,
+            content
+        });
+
+        expect(messages).toHaveLength(0);
+    });
+
+    describe('tool_call_update content normalization (Gemini/OpenCode path)', () => {
+        it('unwraps text content block to string output', () => {
+            // Gemini sends content: [{type:'content', content:{type:'text', text:'...'}}]
+            // when the tool has stdout. HAPI must normalize this to a plain string.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'gem-1',
+                title: 'shell',
+                rawInput: { cmd: 'echo hello' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'gem-1',
+                status: 'completed',
+                content: [{ type: 'content', content: { type: 'text', text: 'hello\n' } }]
+            });
+
+            const result = getToolResult(messages, 'gem-1');
+            expect(result.status).toBe('completed');
+            expect(result.output).toBe('hello\n');
+        });
+
+        it('normalizes empty content array to empty string output', () => {
+            // Gemini sends content: [] when returnDisplay is falsy (no visible output).
+            // Raw [] must not be forwarded to the web renderer.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'gem-2',
+                title: 'shell',
+                rawInput: { cmd: 'touch file' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'gem-2',
+                status: 'completed',
+                content: []
+            });
+
+            const result = getToolResult(messages, 'gem-2');
+            expect(result.status).toBe('completed');
+            expect(result.output).toBe('');
+        });
+
+        it('preserves diff content block fields in output', () => {
+            // Gemini sends content: [{type:'diff', path, oldText, newText, _meta:{kind}}]
+            // for file-edit tools. HAPI must surface these fields intact.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'gem-3',
+                title: 'write_file',
+                rawInput: { path: 'src/foo.ts' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'gem-3',
+                status: 'completed',
+                content: [{
+                    type: 'diff',
+                    path: 'src/foo.ts',
+                    oldText: 'old content',
+                    newText: 'new content',
+                    _meta: { kind: 'modify' }
+                }]
+            });
+
+            const result = getToolResult(messages, 'gem-3');
+            expect(result.status).toBe('completed');
+            expect(result.output).toEqual({
+                path: 'src/foo.ts',
+                oldText: 'old content',
+                newText: 'new content',
+                kind: 'modify'
+            });
+        });
+
+        it('prefers rawOutput over content when both are present (regression guard)', () => {
+            // Claude/Codex always send rawOutput. If both fields arrive, rawOutput wins
+            // and the ACP content array is ignored to preserve existing behavior.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'reg-1',
+                title: 'Bash',
+                rawInput: { cmd: 'ls' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'reg-1',
+                status: 'completed',
+                rawOutput: { stdout: 'file.txt\n' },
+                content: [{ type: 'content', content: { type: 'text', text: 'should be ignored' } }]
+            });
+
+            const result = getToolResult(messages, 'reg-1');
+            expect(result.status).toBe('completed');
+            expect(result.output).toEqual({ stdout: 'file.txt\n' });
+        });
+
+        it('passes through non-array content value unchanged when rawOutput is absent', () => {
+            // If an ACP agent sends content as a non-array value (e.g. a plain string or
+            // object), normalizeAcpToolContent returns null and we fall back to the
+            // original content to avoid silent data loss.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'reg-2',
+                title: 'Bash',
+                rawInput: { cmd: 'ls' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'reg-2',
+                status: 'completed',
+                content: { stdout: 'file.txt\n' }
+            });
+
+            const result = getToolResult(messages, 'reg-2');
+            expect(result.status).toBe('completed');
+            expect(result.output).toEqual({ stdout: 'file.txt\n' });
+        });
+
+        it('falls back to raw content for mixed text+diff array (null from normalizer)', () => {
+            // A mixed array [{type:'content',...}, {type:'diff',...}] cannot be safely
+            // collapsed into either a string or a single diff object without losing data.
+            // normalizeAcpToolContent must return null so the caller falls back to the
+            // original content array, preserving all information.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            const mixedContent = [
+                { type: 'content', content: { type: 'text', text: 'some stdout' } },
+                { type: 'diff', path: 'src/foo.ts', oldText: 'old', newText: 'new', _meta: { kind: 'modify' } }
+            ];
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'mixed-1',
+                title: 'run_and_edit',
+                rawInput: { cmd: 'patch' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'mixed-1',
+                status: 'completed',
+                content: mixedContent
+            });
+
+            const result = getToolResult(messages, 'mixed-1');
+            expect(result.status).toBe('completed');
+            // Must fall back to original content array — no information loss
+            expect(result.output).toEqual(mixedContent);
+        });
+
+        it('falls back to raw content for multi-diff array (null from normalizer)', () => {
+            // Multiple diff blocks cannot be collapsed into a single diff object.
+            // normalizeAcpToolContent must return null so we keep the full array.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            const multiDiffContent = [
+                { type: 'diff', path: 'a.ts', oldText: 'a-old', newText: 'a-new', _meta: { kind: 'modify' } },
+                { type: 'diff', path: 'b.ts', oldText: 'b-old', newText: 'b-new', _meta: { kind: 'modify' } }
+            ];
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'multidiff-1',
+                title: 'edit_files',
+                rawInput: { files: ['a.ts', 'b.ts'] },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'multidiff-1',
+                status: 'completed',
+                content: multiDiffContent
+            });
+
+            const result = getToolResult(messages, 'multidiff-1');
+            expect(result.status).toBe('completed');
+            // Must fall back to original content array — no information loss
+            expect(result.output).toEqual(multiDiffContent);
+        });
+
+        it('falls back to raw content for unknown block type (null from normalizer)', () => {
+            // An unrecognized block type (e.g. {type:'image',...}) cannot be safely
+            // normalized. We must return null and let the caller fall back to the original
+            // content to avoid silent data loss.
+            const messages: AgentMessage[] = [];
+            const handler = new AcpMessageHandler((message) => messages.push(message));
+
+            const unknownContent = [
+                { type: 'image', url: 'https://example.com/screenshot.png' }
+            ];
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCall,
+                toolCallId: 'unknown-1',
+                title: 'screenshot',
+                rawInput: { url: 'https://example.com' },
+                status: 'in_progress'
+            });
+
+            handler.handleUpdate({
+                sessionUpdate: ACP_SESSION_UPDATE_TYPES.toolCallUpdate,
+                toolCallId: 'unknown-1',
+                status: 'completed',
+                content: unknownContent
+            });
+
+            const result = getToolResult(messages, 'unknown-1');
+            expect(result.status).toBe('completed');
+            // Must fall back to original content array — no information loss
+            expect(result.output).toEqual(unknownContent);
+        });
+    });
 });
