@@ -61,6 +61,12 @@ export default {
   // Session header
   'session.title': '文件',
   'session.more': '更多操作',
+  'session.outline.open': '会话大纲',
+  'session.outline.close': '关闭大纲',
+  'session.outline.title': '大纲',
+  'session.outline.loadOlder': '加载更早',
+  'session.outline.empty': '已加载消息中暂无大纲项',
+  'session.outline.kind.user': '用户',
 
   // Session actions
   'session.action.rename': '重命名',
@@ -182,6 +188,8 @@ export default {
   'tool.exitPlan': '退出计划模式',
   'tool.patch': '补丁',
   'tool.input': '输入',
+  'tool.trace': '追踪',
+  'tool.trace.callsSuffix': '次调用',
   'tool.result': '结果',
   'tool.questionsAnswers': '问答',
   'tool.submit': '提交',
