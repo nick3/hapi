@@ -105,7 +105,7 @@ function normalizeAssistantOutput(
     localId: string | null,
     createdAt: number,
     data: Record<string, unknown>,
-    meta?: unknown
+    meta?: unknown,
 ): NormalizedMessage | null {
     const uuid = asString(data.uuid) ?? messageId
     const parentUUID = asString(data.parentUuid) ?? null
@@ -142,11 +142,13 @@ function normalizeAssistantOutput(
     const usage = isObject(message.usage) ? (message.usage as Record<string, unknown>) : null
     const inputTokens = usage ? asNumber(usage.input_tokens) : null
     const outputTokens = usage ? asNumber(usage.output_tokens) : null
+    const model = asString(message.model) ?? null
 
     return {
         id: messageId,
         localId,
         createdAt,
+        model,
         role: 'agent',
         isSidechain,
         content: blocks,
@@ -166,7 +168,7 @@ function normalizeUserOutput(
     localId: string | null,
     createdAt: number,
     data: Record<string, unknown>,
-    meta?: unknown
+    meta?: unknown,
 ): NormalizedMessage | null {
     const uuid = asString(data.uuid) ?? messageId
     const parentUUID = asString(data.parentUuid) ?? null
@@ -305,7 +307,7 @@ export function normalizeAgentRecord(
     localId: string | null,
     createdAt: number,
     content: unknown,
-    meta?: unknown
+    meta?: unknown,
 ): NormalizedMessage | null {
     if (!isObject(content) || typeof content.type !== 'string') return null
 
@@ -359,7 +361,8 @@ export function normalizeAgentRecord(
                 role: 'event',
                 content: {
                     type: 'turn-duration',
-                    durationMs: asNumber(data.durationMs) ?? 0
+                    durationMs: asNumber(data.durationMs) ?? 0,
+                    targetMessageId: asString(data.messageId) ?? undefined
                 },
                 isSidechain: false,
                 meta
